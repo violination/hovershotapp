@@ -31,3 +31,13 @@ Uma única instância Web Service com WS, sem Redis/MySQL para o laboratório; s
 - Conta Render conectada: workspace Oliver's workspace (tea-dc0c7gc0916s73dauobg). Antes do provisionamento, list_services retornou vazio.
 - Blueprint criado como **plano**: identificador exs-dc0cnoec6qcc739nd5qg, repositório e branch corretos, autoSync habilitado. **Planejamento falhou**: Render devolveu `planningOutcome=failed` com `need_payment_info` no serviço; `sync=null`. Nenhum Web Service implantado, domínio ou DNS modificado. Não declarar aplicação online até revisão e aprovação de um novo plano válido.
 - **Domínio confirmado pelo proprietário: `app.hovershot.online`**, retificando a grafia `app.hovershor.online`. O código já permite essa origem; DNS e certificado ainda pendentes de provisionamento real no Render.
+
+## Publicação Render verificada em 20/11/2026
+
+- Proprietário aprovou expressamente a criação do serviço Web Service **Free**.
+- Blueprint de Render `exs-dc0cnoec6qcc739nd5qg` aprovado, sync `exe-dc0csl2fngtc738o4a7g` aplicado.
+- Serviço criado: `srv-dc0ctlu7bikc73f56hqg`, slug `hover-shot-app-dukv`, URL atribuída `https://hover-shot-app-dukv.onrender.com`.
+- Primeira publicação no SHA `64602bff6fe0d698e5d7912bd89baedeff2abae2`, deploy `dep-dc0ctme7bikc73f56j50`, estado Render **live** e evento `deploy_ended=success`, após `build_ended=success`. Logs: `HOVER_SHOT_NETWORK_LAB_READY port=10000` e `Your service is live`.
+- Infraestrutura configurada: Node.js 24, Web Service gratuito, região Virginia, health `/healthz`, WSS `/ws`, interface de homologação `/lab`, segredo gerado na infraestrutura (`LAB_ACCESS_TOKEN`, não registrado em código).
+- **Ainda pendente:** teste HTTP externo de `/healthz` e `/lab`; teste WSS de ponta a ponta em dois navegadores; adição/verificação do domínio personalizado `app.hovershot.online` e certificado TLS. Não declarar esses passos concluídos sem prova.
+- **Observação:** documentação não altera nem prepara DNS na Hostinger. A home e o catálogo não foram modificados pelo provisionamento.
