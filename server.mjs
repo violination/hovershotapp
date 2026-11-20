@@ -4,9 +4,14 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { WebSocket, WebSocketServer } from 'ws';
+import { attachArena } from './game/network.mjs';
 
 const folder=resolve(fileURLToPath(new URL('.',import.meta.url)));
 const assets={
+  '/':{body:readFileSync(resolve(folder,'public/game.html')),type:'text/html; charset=utf-8'},
+  '/play':{body:readFileSync(resolve(folder,'public/game.html')),type:'text/html; charset=utf-8'},
+  '/game.css':{body:readFileSync(resolve(folder,'public/game.css')),type:'text/css; charset=utf-8'},
+  '/game.js':{body:readFileSync(resolve(folder,'public/game.js')),type:'text/javascript; charset=utf-8'},
   '/lab':{body:readFileSync(resolve(folder,'public/index.html')),type:'text/html; charset=utf-8'},
   '/lab.css':{body:readFileSync(resolve(folder,'public/lab.css')),type:'text/css; charset=utf-8'},
   '/lab.js':{body:readFileSync(resolve(folder,'public/lab.js')),type:'text/javascript; charset=utf-8'}
@@ -83,6 +88,7 @@ export function createLabServer({accessToken,allowLocalOrigin=false}={}){
   server.on('upgrade',(req,socket,head)=>{
     let path;
     try{path=new URL(req.url||'/', 'http://localhost').pathname;}catch{socket.destroy();return;}
+    if(path==='/play-ws')return;
     if(path!=='/ws'||!originAllowed(req.headers.origin)||wss.clients.size>=LIMITS.clients){
       socket.write('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');socket.destroy();return;
     }
@@ -147,6 +153,7 @@ export function createLabServer({accessToken,allowLocalOrigin=false}={}){
     ws.on('close',()=>{clearTimeout(authTimeout);leave(ws);clients.delete(ws);});
     ws.on('error',()=>{});
   });
+  const arena=attachArena(server,{allowLocalOrigin});
   const heartbeat=setInterval(()=>{
     for(const ws of wss.clients){
       const state=clients.get(ws);
@@ -158,9 +165,9 @@ export function createLabServer({accessToken,allowLocalOrigin=false}={}){
   function close(){
     clearInterval(heartbeat);
     for(const ws of wss.clients)ws.close(1012,'Service restarting');
-    return new Promise(resolve=>{wss.close(()=>{server.close(()=>resolve());server.closeAllConnections();});});
+    return arena.close().then(()=>new Promise(resolve=>{wss.close(()=>{server.close(()=>resolve());server.closeAllConnections();});}));
   }
-  return {server,close,rooms,limits:LIMITS};
+  return {server,close,rooms,arena,limits:LIMITS};
 }
 
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
@@ -168,6 +175,6 @@ if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
   const app=createLabServer({accessToken:token});
   const port=Number(process.env.PORT||10000);
   if(!Number.isInteger(port)||port<1||port>65535)throw Error('PORT invalida');
-  app.server.listen(port,'0.0.0.0',()=>console.log('HOVER_SHOT_NETWORK_LAB_READY port='+port));
+  app.server.listen(port,'0.0.0.0',()=>console.log('HOVER_SHOT_GAME_READY port='+port));
   for(const signal of ['SIGTERM','SIGINT'])process.on(signal,()=>{app.close().finally(()=>process.exit(0));});
 }
