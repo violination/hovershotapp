@@ -13,6 +13,11 @@ export SESSION_SECRET="$(openssl rand -hex 24)"
 : "${LAB_PASSWORD:?LAB_PASSWORD must be configured on Render}"
 if [ "${#LAB_PASSWORD}" -lt 16 ]; then echo 'LAB_PASSWORD_TOO_SHORT'; exit 30; fi
 printf 'test:%s\n' "$(openssl passwd -apr1 "${LAB_PASSWORD}")" > /tmp/dragonboundre_htpasswd
+# Nginx workers are www-data, while this file is created by root with umask 077.
+# Grant read permission only to that group; never make the password file public.
+chgrp www-data /tmp/dragonboundre_htpasswd
+chmod 0640 /tmp/dragonboundre_htpasswd
+LAB_SMOKE_PASSWORD="${LAB_PASSWORD}"
 unset LAB_PASSWORD
 # Every instance/restart is a disposable lab, never reuse partially imported state.
 rm -rf /tmp/dragonbound-db
@@ -68,6 +73,18 @@ if [ "$READY" -ne 1 ]; then
  echo '==== COMBINED LOG ===='; tail -n 100 /tmp/dbre-combined.log
  exit 44
 fi
+# End-to-end local checks MUST pass before advertising readiness. Previous
+# deployment only probed unprotected upstreams, so a bad htpasswd chmod
+# produced HTTP 500 for every authenticated human browser request.
+ANON_CODE="$(curl --silent --output /dev/null --write-out '%{http_code}' --max-time 6 http://127.0.0.1:10000/ || echo DOWN)"
+AUTH_CODE="$(curl --silent --output /dev/null --write-out '%{http_code}' --max-time 8 --user "test:${LAB_SMOKE_PASSWORD}" http://127.0.0.1:10000/ || echo DOWN)"
+STATIC_CODE="$(curl --silent --output /dev/null --write-out '%{http_code}' --max-time 8 --user "test:${LAB_SMOKE_PASSWORD}" http://127.0.0.1:10000/static/css/ThorBound.min.css || echo DOWN)"
+unset LAB_SMOKE_PASSWORD
+if [ "$ANON_CODE" != "401" ] || [ "$AUTH_CODE" != "200" ] || [ "$STATIC_CODE" != "200" ]; then
+  echo "AUTHENTICATED_HTTP_SMOKE_FAILED anonymous=$ANON_CODE authenticated=$AUTH_CODE static=$STATIC_CODE"
+  exit 46
+fi
+echo "AUTHENTICATED_HTTP_SMOKE_OK anonymous=401 authenticated=200 static=200"
 printf '%s\n' '{"status":"ok","mode":"dragonboundre-lab","web":true,"game":true}' > /tmp/dragonboundre-health.json
 chmod 644 /tmp/dragonboundre-health.json
 echo 'DRAGONBOUNDRE_LAB_READY web=200 game=200 port=10000'
