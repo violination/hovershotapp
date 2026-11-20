@@ -44,10 +44,16 @@ READY=0
 for n in $(seq 1 40); do
  if ! kill -0 "$WEB_PID" 2>/dev/null; then echo 'WEB_EXITED'; tail -n 70 /tmp/dbre-web.log; exit 42; fi
  if ! kill -0 "$GAME_PID" 2>/dev/null; then echo 'GAME_EXITED'; tail -n 70 /tmp/dbre-game.log; exit 43; fi
- if node -e 'Promise.all([fetch("http://127.0.0.1:8080/"),fetch("http://127.0.0.1:9001/")]).then(async r=>{await Promise.all(r.map(x=>x.arrayBuffer())); if(r.some(x=>x.status!==200))process.exit(1);}).catch(()=>process.exit(1));' >/dev/null 2>&1; then
+ PROBE="$(node -e 'Promise.all(["http://127.0.0.1:8080/","http://127.0.0.1:9001/"].map(url=>fetch(url,{signal:AbortSignal.timeout(1600)}).then(r=>r.status).catch(()=>"DOWN"))).then(r=>{console.log("web="+r[0]+" game="+r[1]);process.exit(r[0]===200&&r[1]===200?0:1)});' 2>&1)" && PROBE_OK=1 || PROBE_OK=0
+ if [ "$PROBE_OK" -eq 1 ]; then
    READY=1
-   echo 'DRAGONBOUNDRE_UPSTREAMS_OK web=200 game=200'
+   echo "DRAGONBOUNDRE_UPSTREAMS_OK $PROBE"
    break
+ fi
+ if [ "$n" -eq 1 ] || [ "$n" -eq 5 ] || [ "$n" -eq 10 ] || [ "$n" -eq 20 ] || [ "$n" -eq 30 ]; then
+   echo "DRAGONBOUNDRE_PROBE n=$n $PROBE"
+   tail -n 5 /tmp/dbre-web.log | sed 's/^/WEB: /'
+   tail -n 5 /tmp/dbre-game.log | sed 's/^/GAME: /'
  fi
  sleep 2
 done
