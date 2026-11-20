@@ -145,3 +145,16 @@ replacement="""    getMap: function (id) {
 controller.write_text(original[:idx]+replacement,encoding="utf-8")
 print("DRAGONBOUNDRE_LAZY_TERRAIN_ENABLED cache=2 clone=Buffer")
 
+# Original legacy module accidentally overwrites the JavaScript global Map
+# constructor. When web and game share a Node process this makes rfdc/log4js
+# fail with "constructorHandlers.set is not a function". It is not used as a
+# module-scoped identifier after declaration, so export only the class.
+legacy_map=root/"src/game/lib/map.js"
+legacy_map_code=legacy_map.read_text(encoding="utf-8")
+old_export="module.exports = Map = cls.Class.extend({"
+if legacy_map_code.count(old_export)!=1:
+    raise RuntimeError("Legacy global Map assignment changed")
+legacy_map.write_text(legacy_map_code.replace(old_export,"module.exports = cls.Class.extend({",1),encoding="utf-8")
+print("DRAGONBOUNDRE_GLOBAL_MAP_RESTORED")
+
+
