@@ -6,7 +6,7 @@ Aplicativo de jogo do projeto **Hover Shot**, com backend Node.js/WebSocket no *
 
 **Estado verificado:** este repositório recebe inicialmente o laboratório `lab-v1` de rede aprovado no repositório `hovershotonline/hovershot`, não um jogo DragonBound completo. A primeira interface comprova autenticação de laboratório, sala de 2, turnos, comandos de tiro sem física e ping/pong. **Não é um clone nem um motor de combate escolhido.**
 
-**Objetivo de domínio:** subdomínio `app` a confirmar no domínio do proprietário antes de alterar DNS. Nenhum DNS é configurado por este repositório. O Render fornece um endereço HTTPS/WSS próprio inicialmente.
+**Domínio oficial confirmado:** `https://app.hovershot.online/`. A home e o catálogo permanecem em `https://hovershot.online/`. Nenhum DNS foi alterado: o Render fornecerá inicialmente um endereço HTTPS/WSS próprio; depois de verificar o serviço e receber o destino DNS específico, configuraremos o CNAME e o certificado TLS para `app.hovershot.online`.
 
 ## Arquitetura
 
