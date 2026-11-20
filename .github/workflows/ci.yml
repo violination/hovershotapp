@@ -22,6 +22,10 @@ jobs:
         run: |
           node --check server.mjs
           node --check public/lab.js
+          node --check public/game.js
+          node --check game/physics.mjs
+          node --check game/network.mjs
+          node --check test/game.test.mjs
           node --check test/server.test.mjs
       - name: Exercitar dois jogadores, seguranca e salas
         run: timeout 60s npm test
