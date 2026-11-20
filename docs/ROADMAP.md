@@ -8,7 +8,8 @@ Criar jogo de artilharia original, jogável no navegador em Render: física bal�
 - **Decidido:** modos solo contra CPU e 1x1 por código. Servidor Render controla a física, o turno, dano, terreno e resultado; cliente apenas desenha, envia ângulo/força e anima eventos. Sem banco e sem armazenamento de partidas no plano Free.
 - **Decidido:** WebSocket público do jogo separado (`/play-ws`), sem segredo de laboratório, com checagem de origem, limites de mensagens, sessões por socket e limpeza automática de salas vazias.
 - **Decidido:** experiência própria original, sem dependência de imagens de terceiros, renderização HTML5 Canvas. Portal principal na Hostinger não será alterado.
-- **Implementação em andamento:** arena de jogo, física e colisões, bot, HUD responsivo, teclas/controles touch, suíte de testes.
+- **Implementado no GitHub:** arena Canvas, mira, potência, trajetória, colisões, deformação do terreno, HP, vento, CPU, duas pessoas por sala WebSocket, HUD responsivo, teclado/controles touch via sliders, revanche e testes automatizados.
+- **Verificado:** GitHub Actions da revisão `6058c6401fb3cf903b3e669fb80748236ed043bd` aprovado no workflow `44834794477`, incluindo o novo teste de partida solo com resposta da CPU e os testes 1×1. Validação de publicação Render e smoke externo devem ser registradas separadamente.
 - **Gate de entrega:** CI aprovado, deploy Render `live`, `/healthz` e raiz acessíveis; confirmar WebSocket com testes e não afirmar teste humano que não ocorreu.
 
 ## Posteriores, ainda não implementados

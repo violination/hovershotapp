@@ -4,17 +4,26 @@
 
 Aplicativo de jogo do projeto **Hover Shot**, com backend Node.js/WebSocket no **Render**, separado da home e do catálogo em `https://hovershot.online/` (Hostinger Cloud Startup).
 
-**Estado verificado:** este repositório recebe inicialmente o laboratório `lab-v1` de rede aprovado no repositório `hovershotonline/hovershot`, não um jogo DragonBound completo. A primeira interface comprova autenticação de laboratório, sala de 2, turnos, comandos de tiro sem física e ping/pong. **Não é um clone nem um motor de combate escolhido.**
+**Estado verificado:** o aplicativo oferece um **MVP original jogável de artilharia** na rota `/`: solo contra CPU e duelo entre duas pessoas, partida por turnos, cálculo de trajetória balística, vento, terreno deformável, dano e vidas. O servidor Render calcula os resultados; o cliente Canvas HTML5 desenha a arena e anima os disparos. O laboratório de rede legado permanece isolado na rota `/lab` e exige segredo próprio. **Não é uma cópia de DragonBound nem um motor de produção completo.**
 
 **Domínio oficial confirmado:** `https://app.hovershot.online/`. A home e o catálogo permanecem em `https://hovershot.online/`. Nenhum DNS foi alterado: o Render fornecerá inicialmente um endereço HTTPS/WSS próprio; depois de verificar o serviço e receber o destino DNS específico, configuraremos o CNAME e o certificado TLS para `app.hovershot.online`.
 
 ## Arquitetura
 
-- `server.mjs`: HTTP health e frontend estático com WebSocket `/ws` na mesma origem.
-- `public/`: interface em HTML/CSS/JS, responsiva, sem framework pesado.
-- `test/`: integração com 2 clientes `ws` locais e testes de segurança.
+- `server.mjs`: servidor HTTP único, `/healthz`, jogo em `/`, diagnóstico em `/lab`.
+- `game/physics.mjs`: simulação balística, colisões, dano, terreno e bot, calculados no servidor.
+- `game/network.mjs`: salas públicas temporárias, turnos e WebSocket `/play-ws`.
+- `public/`: telas Canvas HTML5 responsivas, sem framework pesado.
+- `test/`: testes de física, CPU, multiplayer e limites de segurança.
 - `render.yaml`: Web Service Free com segredo aleatório de 256 bits gerado pelo Render (nunca versionado).
 - `docs/PRODUTO_CANONICO.md`: objetivos, decisões, limitações e gates.
+
+## Testar imediatamente
+
+- Abra `https://hover-shot-app-dukv.onrender.com/` e clique em **JOGAR AGORA — VS COMPUTADOR**. Não precisa de chave ou cadastro.
+- Para jogar contra uma pessoa, clique em **CRIAR SALA**, copie o código de seis caracteres, abra a mesma URL em outro navegador/dispositivo e use **ENTRAR**.
+- Use os controles de Ângulo e Potência e clique em **DISPARAR**; no desktop, setas ajustam valores e Espaço atira.
+- O plano Free hiberna após inatividade. Salas e partidas são perdidas após reinício/hibernação; não há reconexão persistente.
 
 ## Execução local
 

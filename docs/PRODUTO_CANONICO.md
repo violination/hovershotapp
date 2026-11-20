@@ -4,8 +4,8 @@
 O jogo próprio Hover Shot será executado no navegador, com multiplayer online. Esta aplicação Node.js/WebSocket será hospedada no Render, separada da home do catálogo permanente em hovershot.online (Hostinger). O repositório de app é violination/hovershotapp; o catálogo continua versionado independentemente em hovershotonline/hovershot.
 
 ## Estado da implementação
-- **Implementado:** laboratório de WebSocket lab-v1, interface HTML5 em /lab, endpoint de saúde /healthz, WebSocket /ws, senha do laboratório, criação de sala para dois, trocas de turnos, comandos de tiro de rede, ping/pong, controle de origem e limites.
-- **Ainda NÃO implementado:** jogo DragonBound, engine definitiva, física balística, vento, tiros com dano, terrenos, login individual, persistência de partidas, matchmaking público e domínio personalizado ativo.
+- **Implementado:** MVP de artilharia original em `/` (solo contra CPU e 1×1 por código), HTML5 Canvas, física balística autoritativa no Render, vento, impacto, dano, HP, terreno deformável, vitória/derrota e revanche; endpoint WebSocket `/play-ws` com origem restrita, limites de mensagens e salas efêmeras. Laboratório WebSocket lab-v1 isolado em `/lab` e `/ws`, com segredo próprio, preservado; saúde em `/healthz`.
+- **Ainda NÃO implementado:** equivalência com DragonBound, motor definitivo, sprites sofisticados, física e balanceamento avançados, autenticação individual, reconexão persistente, matchmaking público, banco/ranking e domínio personalizado ativo.
 - **Não autorizado:** incorporar código, sprites ou marca DragonBound de origem proprietária; o feedback de gameplay serve como referência.
 
 ## Decisões

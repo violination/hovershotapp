@@ -51,7 +51,7 @@ function openGame(action){
   if(m.type==='message'){announce(m.text);return;}
   if(m.type==='pong')return;
   if(m.type==='left_room'){sock.close(1000,'left');return;}
-  if(m.type==='error'){announce(errors[m.code]||'Erro: '+m.code);return;}
+  if(m.type==='error'){announce(errors[m.code]||'Erro: '+m.code);updateHud();return;}
  });
  sock.addEventListener('close',()=>{
   if(ws!==sock)return;
@@ -194,7 +194,7 @@ function drawTank(player,index,terrain,now){
  }
  const angle=(isMe&&state?.turn===myId?Number($('angle').value):45)*Math.PI/180;
  const dir=index===0?1:-1;
- ctx.save();ctx.translate(dir*4,-10);ctx.rotate(-dir*angle);
+ ctx.save();ctx.translate(dir*4,-10);ctx.rotate(-dir*angle);ctx.scale(dir,1);
  ctx.fillStyle='#314b4a';ctx.fillRect(0,-6,42,12);
  ctx.fillStyle=tint;ctx.fillRect(15,-6,21,5);
  ctx.fillStyle='#e2f5ad';ctx.fillRect(37,-7,6,14);
