@@ -1,0 +1,34 @@
+name: Hover Shot App — Node.js WebSocket CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ws-lab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Instalar dependencias sem scripts
+        run: npm ci --no-audit --no-fund --ignore-scripts
+      - name: Validar codigo e sintaxe
+        run: |
+          node --check server.mjs
+          node --check public/lab.js
+          node --check test/server.test.mjs
+      - name: Exercitar dois jogadores, seguranca e salas
+        run: timeout 60s npm test
+      - name: Confirmar configuracao Render
+        run: |
+          grep -Fq 'name: hover-shot-app' render.yaml
+          grep -Fq 'healthCheckPath: /healthz' render.yaml
+          grep -Fq 'generateValue: true' render.yaml
+          echo 'RESULTADO=HOVER_SHOT_APP_TESTES_APROVADOS'

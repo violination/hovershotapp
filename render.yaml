@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: hover-shot-app
+    runtime: node
+    plan: free
+    region: virginia
+    buildCommand: npm install --no-audit --no-fund --ignore-scripts
+    startCommand: npm start
+    healthCheckPath: /healthz
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: LAB_ACCESS_TOKEN
+        generateValue: true

@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Hover Shot — Laboratório de rede</title>
+<link rel="stylesheet" href="/lab.css">
+<script type="module" src="/lab.js"></script>
+</head>
+<body>
+<main class="shell">
+  <header class="top">
+    <div class="logo"><span class="logo-icon">✦</span><div><strong>HOVER SHOT</strong><small>LABORATÓRIO MULTIPLAYER</small></div></div>
+    <span class="lab-tag">RENDER · WSS</span>
+  </header>
+  <section class="intro">
+    <span class="eyebrow">HOMOLOGAÇÃO DE INFRAESTRUTURA</span>
+    <h1>Duas pessoas.<br><em>Uma sala online.</em></h1>
+    <p>Este laboratório testa WebSocket, sala compartilhada, comandos de tiro e turnos entre navegadores. <strong>Não é o jogo final: não há física, dano nem personagens.</strong></p>
+  </section>
+  <div class="panel-grid">
+    <section class="panel" aria-labelledby="connect-title">
+      <div class="panel-top"><span class="step">01</span><h2 id="connect-title">Conectar</h2><span id="connection-status" class="status">Desconectado</span></div>
+      <form id="connect-form">
+        <label for="nickname">Seu nome</label>
+        <input id="nickname" name="nickname" maxlength="24" required value="Jogador" autocomplete="nickname">
+        <label for="access-token">Chave de acesso ao laboratório</label>
+        <input id="access-token" name="access-token" type="password" required minlength="20" autocomplete="off" placeholder="Valor configurado no Render">
+        <button id="connect" type="submit" class="primary">Conectar ao servidor</button>
+      </form>
+      <p class="hint">A chave fica somente nesta sessão do navegador e é enviada pela conexão WSS criptografada. Não compartilhe publicamente.</p>
+    </section>
+    <section class="panel" aria-labelledby="room-title">
+      <div class="panel-top"><span class="step">02</span><h2 id="room-title">Sala</h2></div>
+      <button id="create-room" type="button" disabled class="primary">Criar sala de 2 jogadores</button>
+      <div class="separator"><span>ou entrar com código</span></div>
+      <form id="join-form" class="join-row">
+        <label class="sr-only" for="room-code">Código da sala</label>
+        <input id="room-code" name="room-code" maxlength="6" minlength="6" pattern="[A-Fa-f0-9]{6}" placeholder="Ex.: A1B2C3" required autocomplete="off">
+        <button id="join-room" type="submit" disabled>Entrar</button>
+      </form>
+      <div id="room-info" hidden>
+        <p class="room-caption">CÓDIGO DA SALA</p><div class="room-line"><strong id="active-room"></strong><button id="copy-code" type="button">Copiar</button></div>
+        <p class="room-caption">JOGADORES CONECTADOS</p><ul id="players"></ul>
+        <button type="button" id="leave-room" class="link-danger">Sair da sala</button>
+      </div>
+    </section>
+    <section class="panel" aria-labelledby="shot-title">
+      <div class="panel-top"><span class="step">03</span><h2 id="shot-title">Teste de comandos</h2></div>
+      <p id="turn-message" class="hint">Conecte duas pessoas na mesma sala para testar os turnos.</p>
+      <form id="fire-form">
+        <div class="inline-inputs">
+          <label for="angle">Ângulo <input id="angle" type="number" min="0" max="180" step="1" value="60"></label>
+          <label for="power">Força <input id="power" type="number" min="1" max="100" step="1" value="75"></label>
+        </div>
+        <button type="submit" id="fire" class="primary" disabled>Enviar disparo de teste</button>
+      </form>
+      <p class="hint">O servidor valida o turno e replica o comando. Não calcula trajetória nem colisão.</p>
+      <div class="latency">Latência de ida e volta: <strong id="latency">—</strong></div>
+    </section>
+    <section class="panel event-panel" aria-labelledby="events-title">
+      <div class="panel-top"><span class="step">04</span><h2 id="events-title">Eventos da conexão</h2></div>
+      <ol id="events" aria-live="polite" aria-relevant="additions text"></ol>
+    </section>
+  </div>
+  <footer><span>Hover Shot · infraestrutura de teste</span><span>Sem login, partidas persistentes ou custos de banco de dados.</span></footer>
+</main>
+</body>
+</html>
