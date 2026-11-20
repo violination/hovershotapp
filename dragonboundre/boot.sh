@@ -14,6 +14,8 @@ export SESSION_SECRET="$(openssl rand -hex 24)"
 if [ "${#LAB_PASSWORD}" -lt 16 ]; then echo 'LAB_PASSWORD_TOO_SHORT'; exit 30; fi
 printf 'test:%s\n' "$(openssl passwd -apr1 "${LAB_PASSWORD}")" > /tmp/dragonboundre_htpasswd
 unset LAB_PASSWORD
+# Every instance/restart is a disposable lab, never reuse partially imported state.
+rm -rf /tmp/dragonbound-db
 mkdir -p /run/mysqld /tmp/dragonbound-db
 chown -R mysql:mysql /run/mysqld /tmp/dragonbound-db
 mariadb-install-db --datadir=/tmp/dragonbound-db --user=mysql --skip-test-db --auth-root-authentication-method=normal >/dev/null
@@ -36,11 +38,29 @@ npm run start:game > /tmp/dbre-game.log 2>&1 &
 GAME_PID=$!
 npm run start:web > /tmp/dbre-web.log 2>&1 &
 WEB_PID=$!
+trap 'kill "$GAME_PID" "$WEB_PID" "${NGINX_PID:-}" "$DB_PID" 2>/dev/null || true' EXIT INT TERM
+# Render must not report the proxy as healthy until BOTH upstreams actually work.
+READY=0
+for n in $(seq 1 40); do
+ if ! kill -0 "$WEB_PID" 2>/dev/null; then echo 'WEB_EXITED'; tail -n 70 /tmp/dbre-web.log; exit 42; fi
+ if ! kill -0 "$GAME_PID" 2>/dev/null; then echo 'GAME_EXITED'; tail -n 70 /tmp/dbre-game.log; exit 43; fi
+ if node -e 'Promise.all([fetch("http://127.0.0.1:8080/"),fetch("http://127.0.0.1:9001/")]).then(async r=>{await Promise.all(r.map(x=>x.arrayBuffer())); if(r.some(x=>x.status!==200))process.exit(1);}).catch(()=>process.exit(1));' >/dev/null 2>&1; then
+   READY=1
+   echo 'DRAGONBOUNDRE_UPSTREAMS_OK web=200 game=200'
+   break
+ fi
+ sleep 2
+done
+if [ "$READY" -ne 1 ]; then
+ echo 'UPSTREAM_SMOKE_FAILED'
+ echo '==== WEB LOG ===='; tail -n 90 /tmp/dbre-web.log
+ echo '==== GAME LOG ===='; tail -n 90 /tmp/dbre-game.log
+ exit 44
+fi
 nginx -t
 nginx -g 'daemon off;' &
 NGINX_PID=$!
 echo 'DRAGONBOUNDRE_LAB_PROXY_READY port=10000'
-trap 'kill "$GAME_PID" "$WEB_PID" "$NGINX_PID" "$DB_PID" 2>/dev/null || true' EXIT INT TERM
 while true; do
  if ! kill -0 "$NGINX_PID" 2>/dev/null; then echo 'NGINX_EXITED'; exit 41; fi
  if ! kill -0 "$WEB_PID" 2>/dev/null; then echo 'WEB_EXITED'; tail -n 60 /tmp/dbre-web.log; exit 42; fi
