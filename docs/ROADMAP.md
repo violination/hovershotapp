@@ -18,3 +18,10 @@ Criar jogo de artilharia original, jogável no navegador em Render: física bal�
 
 ## Operação
 Código e histórico no GitHub `violination/hovershotapp`; hospedagem única Render Free; logs temporários apenas na plataforma; salas efêmeras sem persistência. Versões futuras exigem revisão de custo/capacidade/segurança.
+
+## DragonBoundRE — laboratório isolado (solicitação de 20/11/2026)
+- **Decisão do proprietário:** instalar e testar o código do projeto público `DragonBoundR/DragonBound` antes de decidir se será base do jogo definitivo. Não substituir o Hover Shot que já está online.
+- **Verificado no upstream:** revisão `5e42cb4c6901b0ab16dcdb5dfd38474c7373b33a`, 5.192 arquivos e ~470,7 MB de blobs, processos Node de web e game, MySQL obrigatório, porta WebSocket interna 9001, porta web 80 e SQL inicial de ~2,1 MB. Nenhum arquivo LICENSE independente foi encontrado na raiz; `package.json` declara ISC, mas não verifica direitos sobre imagens/áudios.
+- **Plano:** experimento isolado em ramo `lab/dragonboundre-20261120`; Docker cria MariaDB transitório e dois processos Node, proxy público em uma porta HTTPS/WSS, bloqueio de endpoints administrativos, alterações mínimas e reversíveis, código upstream clonado por SHA durante o build sem copiar assets para o GitHub do projeto.
+- **Status:** implementação exploratória, **NÃO afirmar que DragonBoundRE está instalado ou jogável** sem build, startup, HTTP e WS completos. Render Free tem 512 MB RAM, CPU limitada, sistema de arquivos volátil, 750h/mês compartilhadas e 5 GB de bandwidth incluído: risco de OOM, reinício e cobrança excedente de bandwidth.
+- **Restrições:** não expor dados pré-existentes de contas do dump SQL; não utilizar credenciais públicas fixas; limitar caminhos inseguros e acesso externo. Sem migrar pagamentos, usuários ou dados do projeto Hover Shot; rollback é excluir o serviço de laboratório.
