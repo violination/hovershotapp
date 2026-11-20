@@ -157,4 +157,20 @@ if legacy_map_code.count(old_export)!=1:
 legacy_map.write_text(legacy_map_code.replace(old_export,"module.exports = cls.Class.extend({",1),encoding="utf-8")
 print("DRAGONBOUNDRE_GLOBAL_MAP_RESTORED")
 
+# The Render router must NEVER detect/publish the unprotected upstream
+# ports. Force both legacy processes to bind only on loopback. nginx 10000
+# remains the sole externally reachable HTTP/WSS listener.
+web_http=root/"src/web/main/config/httpServer.js"
+web_http_code=web_http.read_text(encoding="utf-8")
+if web_http_code.count("http.listen(config.PORT);")!=1:
+    raise RuntimeError("Unknown web bind configuration")
+web_http.write_text(web_http_code.replace("http.listen(config.PORT);","http.listen(config.PORT, '127.0.0.1');",1),encoding="utf-8")
+game_http=root/"src/game/lib/ws.js"
+game_http_code=game_http.read_text(encoding="utf-8")
+if game_http_code.count("this._httpServer.listen(port, function()")!=1:
+    raise RuntimeError("Unknown game bind configuration")
+game_http.write_text(game_http_code.replace("this._httpServer.listen(port, function()","this._httpServer.listen(port, '127.0.0.1', function()",1),encoding="utf-8")
+print("DRAGONBOUNDRE_LOOPBACK_ONLY web=8080 game=9001")
+
+
 
