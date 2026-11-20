@@ -19,7 +19,7 @@ rm -rf /tmp/dragonbound-db
 mkdir -p /run/mysqld /tmp/dragonbound-db
 chown -R mysql:mysql /run/mysqld /tmp/dragonbound-db
 mariadb-install-db --datadir=/tmp/dragonbound-db --user=mysql --skip-test-db --auth-root-authentication-method=normal >/dev/null
-mariadbd --user=mysql --datadir=/tmp/dragonbound-db --socket=/run/mysqld/mysqld.sock --pid-file=/run/mysqld/mysqld.pid --bind-address=127.0.0.1 --port=3306 --performance-schema=OFF --skip-log-bin --innodb-buffer-pool-size=16M --max-connections=12 --table-open-cache=48 --key-buffer-size=4M --aria-pagecache-buffer-size=8M --tmp-table-size=8M --max-heap-table-size=8M --log-error=/tmp/dragonbound-db/mariadb.log &
+mariadbd --user=mysql --datadir=/tmp/dragonbound-db --socket=/run/mysqld/mysqld.sock --pid-file=/run/mysqld/mysqld.pid --bind-address=127.0.0.1 --port=3306 --performance-schema=OFF --skip-log-bin --innodb-buffer-pool-size=32M --max-connections=25 --table-open-cache=64 --key-buffer-size=8M --log-error=/tmp/dragonbound-db/mariadb.log &
 DB_PID=$!
 for n in $(seq 1 120); do
   if mariadb --socket=/run/mysqld/mysqld.sock -uroot -e 'SELECT 1' >/dev/null 2>&1; then break; fi
