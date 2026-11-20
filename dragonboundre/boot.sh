@@ -1,7 +1,7 @@
 #!/bin/bash
 set -Eeuo pipefail
 umask 077
-export NODE_OPTIONS="--max-old-space-size=96"
+export NODE_OPTIONS="--max-old-space-size=200"
 export WEB_PORT=8080
 export DB_HOST=127.0.0.1
 export DB_PORT=3306
@@ -34,16 +34,13 @@ fi
 rm -f /opt/dragonbound/database/seed-sanitized.sql
 echo 'DATABASE_SANITIZED_INITIALIZED'
 cd /opt/dragonbound
-node src/game.js > /tmp/dbre-game.log 2>&1 &
-GAME_PID=$!
-node src/web/main/server.js > /tmp/dbre-web.log 2>&1 &
-WEB_PID=$!
-trap 'kill "$GAME_PID" "$WEB_PID" "${NGINX_PID:-}" "$DB_PID" 2>/dev/null || true' EXIT INT TERM
+node /opt/dragonbound/lab-combined.cjs > /tmp/dbre-combined.log 2>&1 &
+APP_PID=$!
+trap 'kill "$APP_PID" "${NGINX_PID:-}" "$DB_PID" 2>/dev/null || true' EXIT INT TERM
 # Render must not report the proxy as healthy until BOTH upstreams actually work.
 READY=0
 for n in $(seq 1 40); do
- if ! kill -0 "$WEB_PID" 2>/dev/null; then echo 'WEB_EXITED'; tail -n 70 /tmp/dbre-web.log; exit 42; fi
- if ! kill -0 "$GAME_PID" 2>/dev/null; then echo 'GAME_EXITED'; tail -n 70 /tmp/dbre-game.log; exit 43; fi
+ if ! kill -0 "$APP_PID" 2>/dev/null; then echo 'APP_EXITED'; tail -n 100 /tmp/dbre-combined.log; exit 43; fi
  PROBE="$(node -e 'Promise.all(["http://127.0.0.1:8080/","http://127.0.0.1:9001/"].map(url=>fetch(url,{signal:AbortSignal.timeout(1600)}).then(r=>r.status).catch(()=>"DOWN"))).then(r=>{console.log("web="+r[0]+" game="+r[1]);process.exit(r[0]===200&&r[1]===200?0:1)});' 2>&1)" && PROBE_OK=1 || PROBE_OK=0
  if [ "$PROBE_OK" -eq 1 ]; then
    READY=1
@@ -52,15 +49,13 @@ for n in $(seq 1 40); do
  fi
  if [ "$n" -eq 1 ] || [ "$n" -eq 5 ] || [ "$n" -eq 10 ] || [ "$n" -eq 20 ] || [ "$n" -eq 30 ]; then
    echo "DRAGONBOUNDRE_PROBE n=$n $PROBE"
-   tail -n 5 /tmp/dbre-web.log | sed 's/^/WEB: /'
-   tail -n 5 /tmp/dbre-game.log | sed 's/^/GAME: /'
+   tail -n 12 /tmp/dbre-combined.log | sed 's/^/APP: /'
  fi
  sleep 2
 done
 if [ "$READY" -ne 1 ]; then
  echo 'UPSTREAM_SMOKE_FAILED'
- echo '==== WEB LOG ===='; tail -n 90 /tmp/dbre-web.log
- echo '==== GAME LOG ===='; tail -n 90 /tmp/dbre-game.log
+ echo '==== COMBINED LOG ===='; tail -n 100 /tmp/dbre-combined.log
  exit 44
 fi
 nginx -t
@@ -69,7 +64,6 @@ NGINX_PID=$!
 echo 'DRAGONBOUNDRE_LAB_PROXY_READY port=10000'
 while true; do
  if ! kill -0 "$NGINX_PID" 2>/dev/null; then echo 'NGINX_EXITED'; exit 41; fi
- if ! kill -0 "$WEB_PID" 2>/dev/null; then echo 'WEB_EXITED'; tail -n 60 /tmp/dbre-web.log; exit 42; fi
- if ! kill -0 "$GAME_PID" 2>/dev/null; then echo 'GAME_EXITED'; tail -n 60 /tmp/dbre-game.log; exit 43; fi
+ if ! kill -0 "$APP_PID" 2>/dev/null; then echo 'APP_EXITED'; tail -n 70 /tmp/dbre-combined.log; exit 43; fi
  sleep 5
 done

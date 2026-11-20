@@ -18,6 +18,7 @@ RUN python3 /tmp/dragonboundre_prepare.py \
  && rm /tmp/dragonboundre_prepare.py \
  && rm -f /opt/dragonbound/src/web/public_html/data/images/ava.rar
 
+COPY dragonboundre/combined.cjs /opt/dragonbound/lab-combined.cjs
 COPY dragonboundre/nginx.conf /etc/nginx/nginx.conf
 COPY dragonboundre/boot.sh /usr/local/bin/dragonboundre-boot
 RUN chmod 700 /usr/local/bin/dragonboundre-boot
