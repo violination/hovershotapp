@@ -37,11 +37,21 @@ cd /opt/dragonbound
 node /opt/dragonbound/lab-combined.cjs > /tmp/dbre-combined.log 2>&1 &
 APP_PID=$!
 trap 'kill "$APP_PID" "${NGINX_PID:-}" "$DB_PID" 2>/dev/null || true' EXIT INT TERM
-# Render must not report the proxy as healthy until BOTH upstreams actually work.
+# Publish proxy early to avoid Render port-scan timeout. Health remains 404
+# until both upstream servers answer successfully; public UI remains BasicAuth-gated.
+rm -f /tmp/dragonboundre-health.json
+nginx -t
+nginx -g 'daemon off;' &
+NGINX_PID=$!
+echo 'DRAGONBOUNDRE_PROXY_STARTING port=10000'
 READY=0
 for n in $(seq 1 40); do
  if ! kill -0 "$APP_PID" 2>/dev/null; then echo 'APP_EXITED'; tail -n 100 /tmp/dbre-combined.log; exit 43; fi
- PROBE="$(node -e 'Promise.all(["http://127.0.0.1:8080/","http://127.0.0.1:9001/"].map(url=>fetch(url,{signal:AbortSignal.timeout(1600)}).then(r=>r.status).catch(()=>"DOWN"))).then(r=>{console.log("web="+r[0]+" game="+r[1]);process.exit(r[0]===200&&r[1]===200?0:1)});' 2>&1)" && PROBE_OK=1 || PROBE_OK=0
+ WEB_STATUS="$(curl -s -o /dev/null -w '%{http_code}' --connect-timeout 1 --max-time 2 http://127.0.0.1:8080/ || echo DOWN)"
+ GAME_STATUS="$(curl -s -o /dev/null -w '%{http_code}' --connect-timeout 1 --max-time 2 http://127.0.0.1:9001/ || echo DOWN)"
+ PROBE="web=$WEB_STATUS game=$GAME_STATUS"
+ PROBE_OK=0
+ if [ "$WEB_STATUS" = "200" ] && [ "$GAME_STATUS" = "200" ]; then PROBE_OK=1; fi
  if [ "$PROBE_OK" -eq 1 ]; then
    READY=1
    echo "DRAGONBOUNDRE_UPSTREAMS_OK $PROBE"
@@ -58,10 +68,9 @@ if [ "$READY" -ne 1 ]; then
  echo '==== COMBINED LOG ===='; tail -n 100 /tmp/dbre-combined.log
  exit 44
 fi
-nginx -t
-nginx -g 'daemon off;' &
-NGINX_PID=$!
-echo 'DRAGONBOUNDRE_LAB_PROXY_READY port=10000'
+printf '%s\n' '{"status":"ok","mode":"dragonboundre-lab","web":true,"game":true}' > /tmp/dragonboundre-health.json
+chmod 644 /tmp/dragonboundre-health.json
+echo 'DRAGONBOUNDRE_LAB_READY web=200 game=200 port=10000'
 while true; do
  if ! kill -0 "$NGINX_PID" 2>/dev/null; then echo 'NGINX_EXITED'; exit 41; fi
  if ! kill -0 "$APP_PID" 2>/dev/null; then echo 'APP_EXITED'; tail -n 70 /tmp/dbre-combined.log; exit 43; fi
