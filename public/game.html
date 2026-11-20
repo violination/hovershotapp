@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b1220">
+<meta name="description" content="Hover Shot — arena de artilharia online. Jogue contra o computador ou desafie um amigo.">
+<title>Hover Shot — Arena</title>
+<link rel="stylesheet" href="/game.css">
+<script type="module" src="/game.js"></script>
+</head>
+<body>
+<div class="app-shell">
+ <header class="masthead">
+  <a class="identity" href="/" aria-label="Hover Shot, página inicial"><span class="emblem">✦</span><span><strong>HOVER <b>SHOT</b></strong><small>ARENA DE ARTILHARIA</small></span></a>
+  <div class="mast-right"><span class="release">PLAYTEST 01</span><span id="connection" class="connect-badge"><i></i> Pronto para jogar</span></div>
+ </header>
+ <main class="main">
+  <div class="topbar">
+   <div class="combatant combatant-left"><span class="avatar avatar-one">01</span><div class="combatant-info"><strong id="name-left">JOGADOR</strong><div class="health-track"><div id="hp-left"></div></div></div><b id="hp-text-left">100 HP</b></div>
+   <div class="center-hud"><span class="round" id="round">PARTIDA RÁPIDA</span><span class="wind" id="wind">VENTO —</span></div>
+   <div class="combatant combatant-right"><b id="hp-text-right">100 HP</b><div class="combatant-info right-info"><strong id="name-right">BOT ATLAS</strong><div class="health-track"><div id="hp-right"></div></div></div><span class="avatar avatar-two">02</span></div>
+  </div>
+  <section class="arena-frame" aria-label="Campo de batalha Hover Shot">
+    <canvas id="battlefield" width="1200" height="640" role="img" aria-label="Campo de batalha com dois veículos, terreno e projeção dos tiros"></canvas>
+    <div class="stage-banner"><span class="live-dot"></span> <span id="stage-status">SELECIONE UM MODO DE JOGO</span></div>
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+    <div id="start-screen" class="overlay">
+      <div class="start-panel">
+       <p class="mini-kicker">✦ BEM-VINDO À ARENA</p>
+       <h1>MIRE. CALCULE.<br><em>DOMINE O CAMPO.</em></h1>
+       <p class="intro">Ajuste o ângulo, controle a potência e acerte o adversário. Cada disparo muda o terreno.</p>
+       <label class="field-label" for="nickname">SEU NOME</label>
+       <input class="name-field" id="nickname" maxlength="22" autocomplete="nickname" value="Jogador" aria-label="Seu nome no jogo">
+       <div class="play-buttons">
+        <button id="solo" type="button" class="btn-main"><span>⚡</span> JOGAR AGORA <small>VS COMPUTADOR</small></button>
+        <button id="duel" type="button" class="btn-outline"><span>◎</span> CRIAR SALA <small>JOGAR COM AMIGO</small></button>
+       </div>
+       <form id="join-form" class="join-bar"><label for="code">Já tem uma sala?</label><input id="code" maxlength="6" pattern="[A-Fa-f0-9]{6}" placeholder="CÓDIGO" required autocomplete="off"><button type="submit">ENTRAR</button></form>
+       <p class="start-footnote">GRÁTIS · SEM CADASTRO · PARTIDAS EXPERIMENTAIS</p>
+      </div>
+    </div>
+    <div id="end-screen" class="overlay end-overlay" hidden><div class="end-card"><span id="end-eyebrow">FIM DE PARTIDA</span><h2 id="end-title">VITÓRIA!</h2><p id="end-subtitle">Excelente disparo, comandante.</p><div class="end-buttons"><button id="rematch" class="btn-main">JOGAR NOVAMENTE</button><button id="back-menu" class="btn-outline">VOLTAR AO MENU</button></div></div></div>
+  </section>
+  <div class="bottom">
+   <div class="mission"><span class="mission-icon">⌖</span><span><strong id="turn-title">AGUARDANDO PARTIDA</strong><small id="turn-hint">Escolha um modo de jogo acima para começar.</small></span></div>
+   <div class="controller">
+    <label class="control-control" for="angle"><span>ÂNGULO <strong id="angle-val">45°</strong></span><input id="angle" type="range" min="5" max="85" value="45" step="1"></label>
+    <label class="control-control" for="power"><span>POTÊNCIA <strong id="power-val">78%</strong></span><input id="power" type="range" min="15" max="100" value="78" step="1"></label>
+    <button id="fire" class="fire-button" disabled>✦ DISPARAR <span>ESPAÇO</span></button>
+   </div>
+  </div>
+  <footer class="footer"><div class="room-area"><span id="room-label">MODO DE JOGO · HOVER SHOT</span><button id="copy-room" type="button" hidden>COPIAR SALA</button><button id="leave" type="button" hidden>SAIR DA PARTIDA</button></div><span class="desktop-help">↑ ↓ ÂNGULO &nbsp; · &nbsp; ← → POTÊNCIA &nbsp; · &nbsp; ESPAÇO DISPARA</span><span class="footer-version">HO V.0.1</span></footer>
+ </main>
+</div>
+</body>
+</html>
