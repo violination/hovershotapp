@@ -16,9 +16,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: npm
       - name: Instalar dependencias sem scripts
-        run: npm ci --no-audit --no-fund --ignore-scripts
+        run: npm install --no-audit --no-fund --ignore-scripts
       - name: Validar codigo e sintaxe
         run: |
           node --check server.mjs
