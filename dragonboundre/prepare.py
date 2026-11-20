@@ -97,3 +97,51 @@ if "const app = express();" not in code:
     raise RuntimeError("Cannot configure Express proxy trust")
 app.write_text(code.replace("const app = express();","const app = express();\n  app.set('trust proxy', 1);",1))
 print("DRAGONBOUNDRE_ADAPTER_READY")
+
+# The original eagerly decodes almost 50 PNG maps at startup and converts
+# raw RGBA buffers into JS number arrays for every battle. On Render Free this
+# exhausts 512 MiB before the website becomes playable. Decode terrain maps
+# lazily, keep at most two templates, and clone compact pixel buffers on demand.
+controller=root/"src/game/lib/mapController.js"
+original=controller.read_text(encoding="utf-8")
+if "if (load) {" not in original or "    getMap: function (id) {" not in original or not original.rstrip().endswith("});"):
+    raise RuntimeError("Upstream mapController layout changed; refuse unsafe patch")
+original=original.replace("if (load) {","if (false) {",1)
+idx=original.index("    getMap: function (id) {")
+replacement="""    getMap: function (id) {
+        const fs=require('fs');
+        const PNG=require('pngjs').PNG;
+        id=Number(id);
+        if (!Number.isInteger(id)||id<0||id>56)return null;
+        try {
+            var base=this.maps[id];
+            if(!base) {
+                const decoded=PNG.sync.read(fs.readFileSync(__dirname+'/maps/map'+id+'.png'));
+                base=new Map(id);
+                base.w=decoded.width;
+                base.h=decoded.height;
+                base.data=decoded.data;
+                base.LoadPoints();
+                this.maps[id]=base;
+                while(Object.keys(this.maps).length>2) {
+                    const oldest=Object.keys(this.maps)[0];
+                    if(oldest===String(id))break;
+                    delete this.maps[oldest];
+                }
+            }
+            const instance=new Map(id);
+            instance.data=Buffer.from(base.data);
+            instance.w=base.w;
+            instance.h=base.h;
+            instance.points=base.points.map(p=>({...p}));
+            return instance;
+        } catch(error) {
+            Logger.error('Map Error: '+id+' '+error.message);
+            return null;
+        }
+    }
+});
+"""
+controller.write_text(original[:idx]+replacement,encoding="utf-8")
+print("DRAGONBOUNDRE_LAZY_TERRAIN_ENABLED cache=2 clone=Buffer")
+
