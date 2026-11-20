@@ -24,3 +24,10 @@ O jogo próprio Hover Shot será executado no navegador, com multiplayer online.
 
 ## Eficiência operacional
 Uma única instância Web Service com WS, sem Redis/MySQL para o laboratório; salas expiram ao perder último membro, heartbeat de 30 s e limites de mensagens. Código e decisões no GitHub. Nenhum arquivo de sessão/backups persistente no Render. Crescimento futuro requer autenticação, persistência e medição de carga.
+
+## Execuções verificadas em 20/11/2026
+
+- Código do laboratório migrado ao repositório violination/hovershotapp na main; teste do GitHub Actions [44830553226](https://github.com/violination/hovershotapp/actions/runs/44830553226) concluído com sucesso.
+- Conta Render conectada: workspace Oliver's workspace (tea-dc0c7gc0916s73dauobg). Antes do provisionamento, list_services retornou vazio.
+- Blueprint criado como **plano**: identificador exs-dc0cnoec6qcc739nd5qg, repositório e branch corretos, autoSync habilitado. **Planejamento falhou**: Render devolveu `planningOutcome=failed` com `need_payment_info` no serviço; `sync=null`. Nenhum Web Service implantado, domínio ou DNS modificado. Não declarar aplicação online até revisão e aprovação de um novo plano válido.
+- O proprietário digitou `app.hovershor.online`, diferente do domínio já usado `hovershot.online`. O código contempla `app.hovershot.online` como hipótese, mas a zona DNS deve aguardar confirmação expressa.
