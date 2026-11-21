@@ -15,3 +15,17 @@ if s.count(needle)!=1:
     raise RuntimeError("Upstream SpacetimeDB URI configuration changed")
 p.write_text(s.replace(needle,replacement),encoding="utf-8")
 print("REMBOUND_SAME_ORIGIN_WSS_CONFIGURED")
+
+# Upstream revision contains duplicated KeyA keyup clause causing EOF syntax error.
+keyboard=Path("/opt/rembound/src/features/game/hooks/use-input.ts")
+code=keyboard.read_text(encoding="utf-8")
+broken="""    if (event.code === "KeyA") {
+      event.preventDefault();
+    if (event.code === "KeyA") {
+      event.preventDefault();"""
+repaired="""    if (event.code === "KeyA") {
+      event.preventDefault();"""
+if code.count(broken)!=1:
+    raise RuntimeError("Upstream keyboard syntax issue changed; manual audit needed")
+keyboard.write_text(code.replace(broken,repaired),encoding="utf-8")
+print("REMBOUND_UPSTREAM_INPUT_SYNTAX_FIXED")

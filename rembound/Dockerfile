@@ -14,6 +14,7 @@ RUN git clone --quiet https://github.com/remcostoeten/Gunbound.git . \
 COPY rembound/prepare.py /tmp/rembound-prepare.py
 RUN python3 /tmp/rembound-prepare.py && rm -f /tmp/rembound-prepare.py \
  && bun install --frozen-lockfile \
+ && cd server/spacetimedb && bun install --frozen-lockfile && cd /opt/rembound \
  && spacetime build --module-path server/spacetimedb \
  && bun run build
 COPY rembound/nginx.conf /etc/nginx/nginx.conf
