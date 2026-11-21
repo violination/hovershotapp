@@ -6,6 +6,7 @@ RUN apt-get update \
 RUN curl -fsSL https://bun.sh/install | bash
 ENV PATH="/root/.bun/bin:/root/.local/bin:/root/.spacetimedb/bin:$PATH"
 RUN curl -fsSL https://install.spacetimedb.com | sh -s -- --yes \
+ && spacetime install 2.2.0 \
  && spacetime version use 2.2.0 \
  && spacetime --version && bun --version
 WORKDIR /opt/rembound
