@@ -43,10 +43,32 @@ nginx -g 'daemon off;' &
 NGINX_PID=$!
 ANON="$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://127.0.0.1:10000/ || echo DOWN)"
 AUTH="$(curl -s -o /dev/null -w '%{http_code}' --max-time 7 --user "test:$LAB_SMOKE_PASSWORD" http://127.0.0.1:10000/ || echo DOWN)"
-unset LAB_SMOKE_PASSWORD
 if [ "$ANON" != "401" ] || [ "$AUTH" != "200" ];then echo "REMBOUND_HTTP_SMOKE_FAILED anon=$ANON auth=$AUTH";exit 20;fi
-WS="$(curl -s -i --max-time 3 -H 'Origin: https://rembound-lab-mvioli7.onrender.com' -H 'Upgrade: websocket' -H 'Connection: Upgrade' -H 'Sec-WebSocket-Version: 13' -H 'Sec-WebSocket-Protocol: v1.json.spacetimedb' -H 'Sec-WebSocket-Key: SGVsbG9Xb3JsZDEyMzQ1Ng==' http://127.0.0.1:10000/v1/database/gunbound/subscribe 2>/dev/null | head -n 1 || true)"
-case "$WS" in *" 101 "*)echo "REMBOUND_WSS_SMOKE_OK status=101";;*)echo "REMBOUND_WSS_SMOKE_FAILED $WS";exit 21;;esac
+# Regression: an actual browser includes Basic Authorization even on this
+# auth_basic-off WebSocket route. The previous smoke omitted it and missed 400.
+# Also preserve the SDK's ?compression=Gzip query and test its wire protocols.
+smoke_socket() {
+  local name="$1" protocol="$2" origin="$3" expected="$4"
+  local status
+  status="$(curl -s -i --max-time 3 \
+    --user "test:$LAB_SMOKE_PASSWORD" \
+    -H "Origin: $origin" \
+    -H 'Upgrade: websocket' \
+    -H 'Connection: Upgrade' \
+    -H 'Sec-WebSocket-Version: 13' \
+    -H "Sec-WebSocket-Protocol: $protocol" \
+    -H 'Sec-WebSocket-Key: SGVsbG9Xb3JsZDEyMzQ1Ng==' \
+    'http://127.0.0.1:10000/v1/database/gunbound/subscribe?compression=Gzip' \
+    2>/dev/null | head -n 1 || true)"
+  case "$status" in
+    *" $expected "*) echo "REMBOUND_WS_SMOKE_OK mode=$name status=$expected";;
+    *) echo "REMBOUND_WS_SMOKE_FAILED mode=$name status=$status";exit 21;;
+  esac
+}
+smoke_socket 'browser-json-basic-auth' 'v1.json.spacetimedb' 'https://rembound-lab-mvioli7.onrender.com' 101
+smoke_socket 'browser-bsatn-basic-auth' 'v1.bsatn.spacetimedb' 'https://rembound-lab-mvioli7.onrender.com' 101
+smoke_socket 'foreign-origin-blocked' 'v1.json.spacetimedb' 'https://invalid.example' 403
+unset LAB_SMOKE_PASSWORD
 printf '%s\n' '{"status":"ok","application":"Rembound-lab","web":true,"spacetime":true}' >/tmp/rembound-health.json
 chmod 0644 /tmp/rembound-health.json
 echo "REMBOUND_LAB_READY port=10000"
