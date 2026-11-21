@@ -41,9 +41,19 @@ if [ "$READY" != "1" ];then echo "REMBOUND_NEXT_TIMEOUT";tail -n 70 /tmp/remboun
 nginx -t
 nginx -g 'daemon off;' &
 NGINX_PID=$!
-ANON="$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://127.0.0.1:10000/ || echo DOWN)"
-AUTH="$(curl -s -o /dev/null -w '%{http_code}' --max-time 7 --user "test:$LAB_SMOKE_PASSWORD" http://127.0.0.1:10000/ || echo DOWN)"
+# Nginx may not be accepting yet on the first scheduler tick. Poll with a
+# bounded deadline and fail only on a persistent HTTP 401/200 mismatch.
+ANON=""
+AUTH=""
+for n in $(seq 1 20); do
+ if ! kill -0 "$NGINX_PID" 2>/dev/null; then echo "REMBOUND_NGINX_EXITED_AT_START";exit 20;fi
+ ANON="$(curl -s -o /dev/null -w '%{http_code}' --max-time 3 http://127.0.0.1:10000/ || true)"
+ AUTH="$(curl -s -o /dev/null -w '%{http_code}' --max-time 3 --user "test:$LAB_SMOKE_PASSWORD" http://127.0.0.1:10000/ || true)"
+ if [ "$ANON" = "401" ] && [ "$AUTH" = "200" ];then break;fi
+ sleep 0.5
+done
 if [ "$ANON" != "401" ] || [ "$AUTH" != "200" ];then echo "REMBOUND_HTTP_SMOKE_FAILED anon=$ANON auth=$AUTH";exit 20;fi
+echo "REMBOUND_HTTP_SMOKE_OK anonymous=401 authenticated=200"
 # Regression: an actual browser includes Basic Authorization even on this
 # auth_basic-off WebSocket route. The previous smoke omitted it and missed 400.
 # Also preserve the SDK's ?compression=Gzip query and test its wire protocols.
