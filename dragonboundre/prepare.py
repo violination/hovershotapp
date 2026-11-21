@@ -174,3 +174,72 @@ print("DRAGONBOUNDRE_LOOPBACK_ONLY web=8080 game=9001")
 
 
 
+
+# --- Lab reconnection hardening (upstream adapter, no gameplay formula changes) ---
+# Nginx on Render forwards all connections from 127.0.0.1. The legacy IP guard
+# shared a permanent ban and an unbounded timestamp list between ALL players.
+# Key that legacy guard by the socket's unique connection id, prune old actions,
+# and delete it on close. This keeps rate limiting without banning other users.
+game_main=root/"src/game.js"
+game_source=game_main.read_text(encoding="utf-8")
+old="const ip = connection._connection._socket.remoteAddress;"
+if game_source.count(old)!=1:
+    raise RuntimeError("Legacy IP guard in game.js changed")
+game_source=game_source.replace(old,"const ip = connection.id;",1)
+old="ip_actions[ip] = {baned:false,actions:[]};"
+if game_source.count(old)!=1:
+    raise RuntimeError("Legacy IP guard initialization changed")
+game_source=game_source.replace(old,old+"\n            connection._connection.once('close', function(){ delete ip_actions[ip]; });",1)
+game_main.write_text(game_source,encoding="utf-8")
+
+account_source=root/"src/game/account.js"
+acct=account_source.read_text(encoding="utf-8")
+old="const ip = this.connection._connection._socket.remoteAddress;"
+if acct.count(old)!=1:
+    raise RuntimeError("Legacy action key in account.js changed")
+acct=acct.replace(old,"const ip = this.con_id;",1)
+old="    var instant_action = 0;\n    //console.log(ip);"
+if acct.count(old)!=1:
+    raise RuntimeError("Legacy anti-spam window changed")
+acct=acct.replace(old,
+"""    // Only count recent rapid room-create attempts for this connection.
+    const guard = this.ip_actions[ip];
+    if (guard) guard.actions = guard.actions.filter(t => Date.now() - t < 10000);
+    var instant_action = 0;
+    //console.log(ip);""",1)
+account_source.write_text(acct,encoding="utf-8")
+print("DRAGONBOUNDRE_PER_CONNECTION_RATE_LIMIT_ENABLED")
+
+# Preserve idle browser WebSocket connections with server-origin ping/pong.
+# The ping is handled by browsers automatically and also resets Nginx proxy
+# upstream inactivity. Terminate dead peers to avoid accumulating stale rooms.
+ws_file=root/"src/game/lib/ws.js"
+wscode=ws_file.read_text(encoding="utf-8")
+old="        this._wss.on('connection', function connection(ws,req) {\n"
+if wscode.count(old)!=1:
+    raise RuntimeError("WebSocket connection handler changed")
+wscode=wscode.replace(old,old+"""            ws._labPong = true;
+            ws.on('pong', function(){ ws._labPong = true; });
+            ws.on('close', function(code){
+                console.log('DRAGONBOUNDRE_WS_CLOSE code=' + code);
+            });
+""",1)
+old="""            self.addConnection(c);
+        });
+    }"""
+if wscode.count(old)!=1:
+    raise RuntimeError("WebSocket constructor end changed")
+wscode=wscode.replace(old,"""            self.addConnection(c);
+        });
+        this._labHeartbeat = setInterval(function(){
+            self._wss.clients.forEach(function(peer){
+                if (peer.readyState !== 1) return;
+                if (peer._labPong === false) { peer.terminate(); return; }
+                peer._labPong = false;
+                try { peer.ping(); } catch (e) { peer.terminate(); }
+            });
+        },25000);
+        this._labHeartbeat.unref();
+    }""",1)
+ws_file.write_text(wscode,encoding="utf-8")
+print("DRAGONBOUNDRE_WS_KEEPALIVE_ENABLED interval=25s")

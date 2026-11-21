@@ -85,6 +85,24 @@ if [ "$ANON_CODE" != "401" ] || [ "$AUTH_CODE" != "200" ] || [ "$STATIC_CODE" !=
   exit 46
 fi
 echo "AUTHENTICATED_HTTP_SMOKE_OK anonymous=401 authenticated=200 static=200"
+
+# Validate the real Nginx -> WebSocket -> game route (not merely HTTP 200 /hi).
+node <<'NODE'
+const WS=require('ws');
+const timeout=setTimeout(()=>{ console.error('PROXY_WEBSOCKET_SMOKE_TIMEOUT');process.exit(1);},6000);
+const socket=new WS('ws://127.0.0.1:10000/game/1',{
+  origin:'https://dragonboundre-lab-mvioli7.onrender.com',
+  handshakeTimeout:5000
+});
+socket.on('open',()=>{
+  clearTimeout(timeout);
+  console.log('PROXY_WEBSOCKET_SMOKE_OK status=101');
+  socket.terminate();
+});
+socket.on('error',err=>{clearTimeout(timeout);console.error('PROXY_WEBSOCKET_SMOKE_ERROR',err.message);process.exit(1);});
+socket.on('unexpected-response',(_req,res)=>{clearTimeout(timeout);console.error('PROXY_WEBSOCKET_SMOKE_STATUS',res.statusCode);process.exit(1);});
+NODE
+
 printf '%s\n' '{"status":"ok","mode":"dragonboundre-lab","web":true,"game":true}' > /tmp/dragonboundre-health.json
 chmod 644 /tmp/dragonboundre-health.json
 echo 'DRAGONBOUNDRE_LAB_READY web=200 game=200 port=10000'
